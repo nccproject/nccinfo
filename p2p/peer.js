@@ -14,7 +14,7 @@ const status = {
 class Peer extends EventEmitter {
   #socket = null
   #host = '127.0.0.1'
-  port = 3888
+  port = 9888
   status = status.DISCONNECTED
   #messages = null
   #receiveBuffer = new BufferReader(Buffer.alloc(0))
@@ -23,7 +23,7 @@ class Peer extends EventEmitter {
   subversion = null
   #versionSent = false
 
-  constructor({socket, host = '127.0.0.1', port = 3888, chain}) {
+  constructor({socket, host = '127.0.0.1', port = 9888, chain}) {
     super()
     this.chain = chain
     if (socket) {

@@ -206,6 +206,7 @@ class BlockService extends Service {
 
   async _onHeaders() {
     await this._resetTip()
+
     return new Promise((resolve, reject) => {
       let interval = setInterval(async () => {
         if (this.#blocksInQueue === 0) {
@@ -252,6 +253,7 @@ class BlockService extends Service {
         break
       }
     }
+
     assert(
       header,
       [
@@ -463,13 +465,17 @@ class BlockService extends Service {
   async _startSync() {
     let numNeeded = Math.max(this.#header.getLastHeader().height - this.#tip.height, 0)
     this.logger.info('Block Service: gathering:', numNeeded, 'block(s) from the peer-to-peer network')
+
     if (numNeeded > 0) {
       this.on('next block', this._sync.bind(this))
       this.on('synced', this._onSynced.bind(this))
       clearInterval(this.#reportInterval)
+
       if (this.#tip.height === 0) {
         let genesisBlock = Block.fromBuffer(this.chain.genesis)
+
         genesisBlock.height = 0
+
         await this._saveBlock(genesisBlock)
       }
       this.#reportInterval = setInterval(this._logProgress.bind(this), 5000).unref()

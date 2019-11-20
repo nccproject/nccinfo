@@ -14,7 +14,7 @@ const config = {logger: 'normal'}
 
 class RpcClient {
   #host = '127.0.0.1'
-  #port = 9889
+  #port = 3889
   #user = 'user'
   #password = 'password'
   #protocol = null
@@ -24,7 +24,7 @@ class RpcClient {
 
   constructor({
     host = '127.0.0.1',
-    port = 9889,
+    port = 3889,
     user = 'user',
     password = 'password',
     protocol = 'http',

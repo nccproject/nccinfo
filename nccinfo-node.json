@@ -14,12 +14,12 @@
   "servicesConfig": {
     "db": {
       "mysql": {
-        "uri": "mysql://ncc@localhost/ncc_mainnet"
+        "uri": "mysql://ncc@localhost/nccinfo"
       },
       "rpc": {
         "protocol": "http",
         "host": "localhost",
-        "port": 9889,
+        "port": 3889,
         "user": "user",
         "password": "password"
       }
@@ -30,7 +30,7 @@
           "ip": {
             "v4": "127.0.0.1"
           },
-          "port": 9888
+          "port": 3888
         }
       ]
     },

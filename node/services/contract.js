@@ -81,6 +81,7 @@ class ContractService extends Service {
       }
       return
     }
+
     for (let transaction of block.transactions) {
       for (let i = 0; i < transaction.outputs.length; ++i) {
         let output = transaction.outputs[i]

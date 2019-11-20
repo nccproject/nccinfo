@@ -28,6 +28,7 @@ class HeaderService extends Service {
     super(options)
     this.#p2p = this.node.services.get('p2p')
     this.#genesisHeader = Header.fromBuffer(this.chain.genesis)
+
   }
 
   static get dependencies() {

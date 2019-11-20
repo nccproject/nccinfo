@@ -5,11 +5,11 @@ const {sql} = require('../utils')
 
 const {ne: $ne, gt: $gt, in: $in} = Sequelize.Op
 
-const totalSupplyABI = Solidity.ncc20ABIs.find(abi => abi.name === 'totalSupply')
-const balanceOfABI = Solidity.ncc20ABIs.find(abi => abi.name === 'balanceOf')
-const ownerOfABI = Solidity.ncc721ABIs.find(abi => abi.name === 'ownerOf')
-const transferABI = Solidity.ncc20ABIs.find(abi => abi.name === 'transfer')
-const TransferABI = Solidity.ncc20ABIs.find(abi => abi.name === 'Transfer')
+const totalSupplyABI = Solidity.nrc20ABIs.find(abi => abi.name === 'totalSupply')
+const balanceOfABI = Solidity.nrc20ABIs.find(abi => abi.name === 'balanceOf')
+const ownerOfABI = Solidity.nrc721ABIs.find(abi => abi.name === 'ownerOf')
+const transferABI = Solidity.nrc20ABIs.find(abi => abi.name === 'transfer')
+const TransferABI = Solidity.nrc20ABIs.find(abi => abi.name === 'Transfer')
 
 class ContractService extends Service {
   #tip = null
@@ -22,10 +22,10 @@ class ContractService extends Service {
   #Contract = null
   #ContractCode = null
   #ContractTag = null
-  #NCC20 = null
-  #NCC20Balance = null
-  #NCC721 = null
-  #NCC721Token = null
+  #NRC20 = null
+  #NRC20Balance = null
+  #NRC721 = null
+  #NRC721Token = null
 
   static get dependencies() {
     return ['block', 'db', 'transaction']
@@ -41,10 +41,10 @@ class ContractService extends Service {
     this.#Contract = this.node.getModel('contract')
     this.#ContractCode = this.node.getModel('contract_code')
     this.#ContractTag = this.node.getModel('contract_tag')
-    this.#NCC20 = this.node.getModel('ncc20')
-    this.#NCC20Balance = this.node.getModel('ncc20_balance')
-    this.#NCC721 = this.node.getModel('ncc721')
-    this.#NCC721Token = this.node.getModel('ncc721_token')
+    this.#NRC20 = this.node.getModel('nrc20')
+    this.#NRC20Balance = this.node.getModel('nrc20_balance')
+    this.#NRC721 = this.node.getModel('nrc721')
+    this.#NRC721Token = this.node.getModel('nrc721_token')
     this.#tip = await this.node.getServiceTip(this.name)
     let blockTip = await this.node.getBlockTip()
     if (this.#tip.height > blockTip.height) {
@@ -106,7 +106,7 @@ class ContractService extends Service {
             ]
           })
           let contract = await this._createContract(address, 'evm')
-          if (contract && contract.type === 'ncc20') {
+          if (contract && contract.type === 'nrc20') {
             await this._updateBalances(new Set([`${address.toString('hex')}:${owner.data.toString('hex')}`]))
           }
         } else if (output.scriptPubKey.type === OutputScript.EVM_CONTRACT_CREATE_SENDER) {
@@ -123,7 +123,7 @@ class ContractService extends Service {
             chain: this.chain
           })
           let contract = await this._createContract(address, 'evm')
-          if (contract && contract.type === 'ncc20') {
+          if (contract && contract.type === 'nrc20') {
             await this._updateBalances(new Set([`${address.toString('hex')}:${owner.data.toString('hex')}`]))
           }
         }
@@ -163,7 +163,7 @@ class ContractService extends Service {
       await this._updateBalances(balanceChanges)
     }
     await this.#db.query(sql`
-      INSERT INTO ncc721_token
+      INSERT INTO nrc721_token
       SELECT log.address AS contract_address, log.topic4 AS token_id, RIGHT(log.topic2, 20) AS holder
       FROM evm_receipt receipt, evm_receipt_log log
       INNER JOIN (
@@ -197,13 +197,13 @@ class ContractService extends Service {
     }
     if (contractsToRemove.length) {
       await this.#db.query(sql`
-        DELETE contract, tag, ncc20, ncc20_balance, ncc721, ncc721_token
+        DELETE contract, tag, nrc20, nrc20_balance, nrc721, nrc721_token
         FROM contract
         LEFT JOIN contract_tag tag ON tag.contract_address = contract.address
-        LEFT JOIN ncc20 ON ncc20.contract_address = contract.address
-        LEFT JOIN ncc20_balance ON ncc20_balance.contract_address = contract.address
-        LEFT JOIN ncc721 ON ncc721.contract_address = contract.address
-        LEFT JOIN ncc721_token ON ncc721_token.contract_address = contract.address
+        LEFT JOIN nrc20 ON nrc20.contract_address = contract.address
+        LEFT JOIN nrc20_balance ON nrc20_balance.contract_address = contract.address
+        LEFT JOIN nrc721 ON nrc721.contract_address = contract.address
+        LEFT JOIN nrc721_token ON nrc721_token.contract_address = contract.address
         WHERE contract.address IN ${contractsToRemove}
       `)
     }
@@ -234,11 +234,11 @@ class ContractService extends Service {
       vm,
       bytecodeSha256sum: sha256sum
     })
-    if (isNCC721(code)) {
+    if (isNRC721(code)) {
       let [nameResult, symbolResult, totalSupplyResult] = await this._batchCallMethods([
-        {address, abi: Solidity.ncc721ABIs.find(abi => abi.name === 'name')},
-        {address, abi: Solidity.ncc721ABIs.find(abi => abi.name === 'symbol')},
-        {address, abi: Solidity.ncc721ABIs.find(abi => abi.name === 'totalSupply')}
+        {address, abi: Solidity.nrc721ABIs.find(abi => abi.name === 'name')},
+        {address, abi: Solidity.nrc721ABIs.find(abi => abi.name === 'symbol')},
+        {address, abi: Solidity.nrc721ABIs.find(abi => abi.name === 'totalSupply')}
       ])
       try {
         let [name, symbol, totalSupply] = await Promise.all([
@@ -246,11 +246,11 @@ class ContractService extends Service {
           symbolResult.then(x => x[0]),
           totalSupplyResult.then(x => BigInt(x[0].toString()))
         ])
-        contract.type = 'ncc721'
+        contract.type = 'nrc721'
         await contract.save()
         await this.#ContractCode.bulkCreate([{sha256sum, code}], {ignoreDuplicates: true})
-        await this.#ContractTag.create({contractAddress: address, tag: 'ncc721'})
-        await this.#NCC721.create({
+        await this.#ContractTag.create({contractAddress: address, tag: 'nrc721'})
+        await this.#NRC721.create({
           contractAddress: address,
           name,
           symbol,
@@ -259,15 +259,15 @@ class ContractService extends Service {
       } catch (err) {
         await contract.save()
       }
-    } else if (isNCC20(code)) {
+    } else if (isNRC20(code)) {
       let [
         nameResult, symbolResult, decimalsResult, totalSupplyResult, versionResult
       ] = await this._batchCallMethods([
-        {address, abi: Solidity.ncc20ABIs.find(abi => abi.name === 'name')},
-        {address, abi: Solidity.ncc20ABIs.find(abi => abi.name === 'symbol')},
-        {address, abi: Solidity.ncc20ABIs.find(abi => abi.name === 'decimals')},
-        {address, abi: Solidity.ncc20ABIs.find(abi => abi.name === 'totalSupply')},
-        {address, abi: Solidity.ncc20ABIs.find(abi => abi.name === 'version')}
+        {address, abi: Solidity.nrc20ABIs.find(abi => abi.name === 'name')},
+        {address, abi: Solidity.nrc20ABIs.find(abi => abi.name === 'symbol')},
+        {address, abi: Solidity.nrc20ABIs.find(abi => abi.name === 'decimals')},
+        {address, abi: Solidity.nrc20ABIs.find(abi => abi.name === 'totalSupply')},
+        {address, abi: Solidity.nrc20ABIs.find(abi => abi.name === 'version')}
       ])
       try {
         let version
@@ -280,11 +280,11 @@ class ContractService extends Service {
           decimalsResult.then(x => x[0].toString()),
           totalSupplyResult.then(x => BigInt(x[0].toString()))
         ])
-        contract.type = 'ncc20'
+        contract.type = 'nrc20'
         await contract.save()
         await this.#ContractCode.bulkCreate([{sha256sum, code}], {ignoreDuplicates: true})
-        await this.#ContractTag.create({contractAddress: address, tag: 'ncc20'})
-        await this.#NCC20.create({
+        await this.#ContractTag.create({contractAddress: address, tag: 'nrc20'})
+        await this.#NRC20.create({
           contractAddress: address,
           name,
           symbol,
@@ -377,7 +377,7 @@ class ContractService extends Service {
       let contract = await this.#Contract.findOne({
         where: {
           address,
-          type: {[$in]: ['ncc20', 'ncc721']}
+          type: {[$in]: ['nrc20', 'nrc721']}
         }
       })
       if (contract) {
@@ -387,10 +387,10 @@ class ContractService extends Service {
         } catch (err) {
           continue
         }
-        if (contract.type === 'ncc20') {
-          await this.#NCC20.update({totalSupply}, {where: {contractAddress: address}})
+        if (contract.type === 'nrc20') {
+          await this.#NRC20.update({totalSupply}, {where: {contractAddress: address}})
         } else {
-          await this.#NCC721.update({totalSupply}, {where: {contractAddress: address}})
+          await this.#NRC721.update({totalSupply}, {where: {contractAddress: address}})
         }
       }
     }
@@ -421,7 +421,7 @@ class ContractService extends Service {
     )
     operations = operations.filter(Boolean)
     if (operations.length) {
-      await this.#NCC20Balance.bulkCreate(operations, {updateOnDuplicate: ['balance'], validate: false})
+      await this.#NRC20Balance.bulkCreate(operations, {updateOnDuplicate: ['balance'], validate: false})
     }
   }
 
@@ -435,17 +435,17 @@ class ContractService extends Service {
         holder
       })
     }
-    await this.#NCC721Token.bulkCreate(operations, {updateOnDuplicate: ['holder'], validate: false})
+    await this.#NRC721Token.bulkCreate(operations, {updateOnDuplicate: ['holder'], validate: false})
   }
 }
 
-function isNCC20(code) {
+function isNRC20(code) {
   return code.includes(balanceOfABI.id)
     && code.includes(transferABI.id)
     && code.includes(TransferABI.id)
 }
 
-function isNCC721(code) {
+function isNRC721(code) {
   return code.includes(balanceOfABI.id)
     && code.includes(ownerOfABI.id)
     && code.includes(TransferABI.id)

@@ -37,7 +37,7 @@ CREATE TABLE `contract` (
   `address` binary(20) NOT NULL,
   `address_string` char(40) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `vm` enum('evm','x86') CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `type` enum('dgp','ncc20','ncc721') CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `type` enum('dgp','nrc20','nrc721') CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
   `bytecode_sha256sum` binary(32) NOT NULL,
   `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`address`) USING BTREE,
@@ -148,7 +148,7 @@ CREATE TABLE `header` (
   KEY `timestamp` (`timestamp`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ncc20` (
+CREATE TABLE `nrc20` (
   `contract_address` binary(20) NOT NULL,
   `name` blob NOT NULL,
   `symbol` blob NOT NULL,
@@ -158,7 +158,7 @@ CREATE TABLE `ncc20` (
   PRIMARY KEY (`contract_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPACT;
 
-CREATE TABLE `ncc20_balance` (
+CREATE TABLE `nrc20_balance` (
   `contract_address` binary(20) NOT NULL,
   `address` binary(20) NOT NULL,
   `balance` binary(32) NOT NULL,
@@ -167,7 +167,7 @@ CREATE TABLE `ncc20_balance` (
   KEY `address` (`address`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ncc20_statistics` (
+CREATE TABLE `nrc20_statistics` (
   `contract_address` binary(20) NOT NULL,
   `holders` int(10) unsigned NOT NULL,
   `transactions` int(10) unsigned NOT NULL,
@@ -176,7 +176,7 @@ CREATE TABLE `ncc20_statistics` (
   KEY `transactions` (`transactions` DESC) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `ncc721` (
+CREATE TABLE `nrc721` (
   `contract_address` binary(20) NOT NULL,
   `name` blob NOT NULL,
   `symbol` blob NOT NULL,
@@ -184,7 +184,7 @@ CREATE TABLE `ncc721` (
   PRIMARY KEY (`contract_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPACT;
 
-CREATE TABLE `ncc721_token` (
+CREATE TABLE `nrc721_token` (
   `contract_address` binary(20) NOT NULL,
   `token_id` binary(32) NOT NULL,
   `holder` binary(20) NOT NULL,
